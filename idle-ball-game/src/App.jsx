@@ -21,7 +21,7 @@ const PALETTE = [
 
 const UPGRADES = [
   { id: "power1", name: "Heavier Click", desc: "+1 click power", baseCost: 20, power: 1 },
-  { id: "ballSpeed", name: "Ball Speed", desc: "+1 ball speed", baseCost: 50, speed: 1 }
+  { id: "ballSpeed", name: "Ball Speed", desc: "+1 ball speed", baseCost: 50, speed: 1 },
 ];
 
 // --- difficulty scaling, infinite levels ---
@@ -58,9 +58,12 @@ function App() {
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
   const [clickPower, setClickPower] = useState(1);
+  const [ballSpeed, setBallSpeed] = useState(0);
   const [ballsLeft, setBallsLeft] = useState(0);
   const [owned, setOwned] = useState({});
   const clickPowerRef = useRef(clickPower);
+  const [openUpgrades, setOpenUpgrades] = useState(true);
+  const [openBalls, setOpenBalls] = useState(false);
 
   useEffect(() => {
     clickPowerRef.current = clickPower;
@@ -77,7 +80,8 @@ function App() {
     const cost = getUpgradeCost(upg, ownedCount);
     setScore((s) => {
       if (s < cost) return s;
-      setClickPower((p) => p + upg.power);
+      if (upg.power) setClickPower((p) => p + upg.power);
+      if (upg.speed) setBallSpeed((sp) => sp + upg.speed);
       setOwned((o) => ({ ...o, [upg.id]: ownedCount + 1 }));
       return s - cost;
     });
@@ -191,7 +195,7 @@ function App() {
       {/* CANVAS */}
       <canvas ref={canvasRef} style={{ display: "block" }} />
 
-      {/* BOTTOM UPGRADE SHOP */}
+      {/* BOTTOM PANEL */}
       <div
         style={{
           height: BOTTOM_BAR_H,
@@ -201,70 +205,115 @@ function App() {
           boxSizing: "border-box",
         }}
       >
-        <div
-          style={{
-            color: "#777",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 12,
-            letterSpacing: 1,
-            marginBottom: 6,
-          }}
-        >
-          <button>UPGRADES</button>
-          <button>BALLS</button>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <TabButton
+            label="UPGRADES"
+            active={openUpgrades}
+            onClick={() => {
+              setOpenUpgrades(true);
+              setOpenBalls(false);
+            }}
+          />
+          <TabButton
+            label="BALLS"
+            active={openBalls}
+            onClick={() => {
+              setOpenBalls(true);
+              setOpenUpgrades(false);
+            }}
+          />
         </div>
+
         <div
           style={{
-            height: BOTTOM_BAR_H - 40,
+            height: BOTTOM_BAR_H - 50,
             overflowY: "auto",
             display: "flex",
             flexDirection: "column",
             gap: 6,
           }}
         >
-          {UPGRADES.map((upg) => {
-            const ownedCount = owned[upg.id] || 0;
-            const cost = getUpgradeCost(upg, ownedCount);
-            const affordable = score >= cost;
-            return (
-              <button
-                key={upg.id}
-                onClick={() => buyUpgrade(upg)}
-                disabled={!affordable}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: affordable ? "#1d2027" : "#191a1f",
-                  border: "1px solid #2a2d35",
-                  borderRadius: 6,
-                  padding: "8px 12px",
-                  color: affordable ? "#fff" : "#555",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  cursor: affordable ? "pointer" : "not-allowed",
-                  textAlign: "left",
-                }}
-              >
-                <span>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{upg.name}</div>
-                  <div style={{ fontSize: 11, color: "#888" }}>
-                    {upg.baseCost < 1000 ? `$${upg.baseCost}` : `${(upg.baseCost / 1000).toFixed(1)}k` }
-                    {upg.desc}
-                    {ownedCount ? ` · owned x${ownedCount}` : ""}
-                  </div>
-                </span>
-                <span
+          {openUpgrades &&
+            UPGRADES.map((upg) => {
+              const ownedCount = owned[upg.id] || 0;
+              const cost = getUpgradeCost(upg, ownedCount);
+              const affordable = score >= cost;
+              return (
+                <button
+                  key={upg.id}
+                  onClick={() => buyUpgrade(upg)}
+                  disabled={!affordable}
                   style={{
-                    color: affordable ? "#2ee6a6" : "#555",
-                    fontWeight: 700,
-                    fontSize: 13,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    background: affordable ? "#1d2027" : "#191a1f",
+                    border: "1px solid #2a2d35",
+                    borderRadius: 6,
+                    padding: "8px 12px",
+                    color: affordable ? "#fff" : "#555",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    cursor: affordable ? "pointer" : "not-allowed",
+                    textAlign: "left",
                   }}
                 >
-                  {cost}
-                </span>
-              </button>
-            );
-          })}
+                  <span>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{upg.name}</div>
+                    <div style={{ fontSize: 11, color: "#888" }}>
+                      {upg.desc}
+                      {ownedCount ? ` · owned x${ownedCount}` : ""}
+                    </div>
+                  </span>
+                  <span
+                    style={{
+                      color: affordable ? "#2ee6a6" : "#555",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    {cost}
+                  </span>
+                </button>
+              );
+            })}
+
+          {openBalls &&
+            Array.from({ length: 12 }, (_, i) => i + 1).map((lvl) => {
+              const val = getBallValue(lvl);
+              const isCurrent = lvl === level;
+              return (
+                <div
+                  key={lvl}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    background: isCurrent ? "#1d2b25" : "#1d2027",
+                    border: isCurrent ? "1px solid #2ee6a6" : "1px solid #2a2d35",
+                    borderRadius: 6,
+                    padding: "8px 12px",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      background: getBallColor(val),
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ color: "#fff", fontSize: 13 }}>
+                    Level {lvl}
+                    {isCurrent ? " · current" : ""}
+                  </span>
+                  <span style={{ color: "#888", fontSize: 12, marginLeft: "auto" }}>
+                    value {val}
+                  </span>
+                </div>
+              );
+            })}
         </div>
       </div>
     </div>
@@ -285,6 +334,29 @@ function Stat({ label, value, accent }) {
         {value}
       </div>
     </div>
+  );
+}
+
+function TabButton({ label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1,
+        background: active ? "#2ee6a6" : "#1d2027",
+        color: active ? "#0c0d10" : "#888",
+        border: "1px solid #2a2d35",
+        borderRadius: 6,
+        padding: "6px 0",
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: 1,
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
