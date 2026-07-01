@@ -24,6 +24,15 @@ const UPGRADES = [
   { id: "ballSpeed", name: "Ball Speed", desc: "+1 ball speed", baseCost: 50, speed: 1 },
 ];
 
+const Balls = {
+  plasticBall: {
+    color: "#e63946",
+    radius: 30,
+    speed: 2,
+    power: 1,
+  }
+};
+
 // --- difficulty scaling, infinite levels ---
 
 function getBallValue(level) {
@@ -64,6 +73,8 @@ function App() {
   const clickPowerRef = useRef(clickPower);
   const [openUpgrades, setOpenUpgrades] = useState(true);
   const [openBalls, setOpenBalls] = useState(false);
+  const [ballPower, setBallPower] = useState(0);
+  const [totalBalls, setTotalBalls] = useState(4);
 
   useEffect(() => {
     clickPowerRef.current = clickPower;
@@ -86,6 +97,7 @@ function App() {
       return s - cost;
     });
   }
+ 
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -131,6 +143,21 @@ function App() {
       });
     }
 
+    function drawBalls() {
+      totalBalls.forEach((b) => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = getBallColor(b.value);
+        ctx.fill();
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 18px 'JetBrains Mono', monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(b.value, b.x, b.y);
+      });
+    }
+    
     resize();
     window.addEventListener("resize", resize);
 
@@ -278,42 +305,17 @@ function App() {
             })}
 
           {openBalls &&
-            Array.from({ length: 12 }, (_, i) => i + 1).map((lvl) => {
-              const val = getBallValue(lvl);
-              const isCurrent = lvl === level;
-              return (
-                <div
-                  key={lvl}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    background: isCurrent ? "#1d2b25" : "#1d2027",
-                    border: isCurrent ? "1px solid #2ee6a6" : "1px solid #2a2d35",
-                    borderRadius: 6,
-                    padding: "8px 12px",
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: "50%",
-                      background: getBallColor(val),
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span style={{ color: "#fff", fontSize: 13 }}>
-                    Level {lvl}
-                    {isCurrent ? " · current" : ""}
-                  </span>
-                  <span style={{ color: "#888", fontSize: 12, marginLeft: "auto" }}>
-                    value {val}
-                  </span>
+            <div>
+              {Object.entries(Balls).map(([key, ball]) => (
+                <div key={key} style={{ display: "flex", alignItems: "center", flexDirection: "column", justifyContent: "center", gap: 10, border: "1px solid #2a2d35", borderRadius: 6, padding: "8px 12px", fontFamily: "'JetBrains Mono', monospace", width: "20%" }}>
+                  <span>{key}</span>
+                  <span>Speed: {ball.speed}</span>
+                  <span>Power: {ball.power}</span>
+                  <button style={{ marginTop: 8, padding: "4px 8px", border: "none", borderRadius: 4, background: "#2ee6a6", color: "#0c0d10", cursor: "pointer" }}>Buy</button>
                 </div>
-              );
-            })}
+              ))}
+            </div>
+            }
         </div>
       </div>
     </div>
