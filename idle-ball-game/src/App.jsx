@@ -20,7 +20,7 @@ const PALETTE = [
 ];
 
 const UPGRADES = [
-  { id: "power1", name: "Heavier Click", desc: "+1 click power", baseCost: 20, power: 1 },
+  { id: "power1", name: "Heavier Click", desc: "+1 click power", baseCost: 20, power: 1/2 },
   { id: "ballSpeed", name: "Ball Speed", desc: "+1 ball speed", baseCost: 50, speed: 1 },
 ];
 
@@ -28,7 +28,7 @@ const UPGRADES = [
 
 function getBallValue(level) {
   const base = 2 * level - 1; // 1, 3, 5, 7...
-  const scaling = level > 2 ? Math.pow(1.15, level - 2) : 1;
+  const scaling = level > 2 ? Math.pow(1.25, level - 2) : 1;
   return Math.round(base * scaling);
 }
 
